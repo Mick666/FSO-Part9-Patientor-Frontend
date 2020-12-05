@@ -96,23 +96,6 @@ const EntryDetails = (entry: Entry) => {
   }
 };
 
-const PatientInfoTable = (entry: Entry) => {
-  const [{ diagnoses },] = useStateValue();
-  return (
-    <div>
-      <h3 >{entry.date}</h3> 
-      <i>{entry.description}</i> <br />
-      <ul>
-        {entry.diagnosisCodes?.map(code => {
-          return (
-            <li>{code} {diagnoses[code].name}</li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-};
-
 const PatientInfo: React.FC = () => {
   const [{ patientInfo }, dispatch] = useStateValue();
   const { id } = useParams<{ id: string }>();
@@ -148,7 +131,7 @@ const PatientInfo: React.FC = () => {
       <p>{patientInfo[id].dateOfBirth ? `DoB: ${patientInfo[id].dateOfBirth}` : ''}</p>
       <p>{patientInfo[id].ssn ? `SSN: ${patientInfo[id].ssn}` : ''}</p>
       <h4>Entries:</h4>
-      {patientInfo[id].entries.map(entry => PatientInfoTable(entry))}
+      {patientInfo[id].entries.map(entry => EntryDetails(entry))}
     </div>
   );
 };
