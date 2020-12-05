@@ -1,6 +1,5 @@
 import { State } from "./state";
-import { Patient, DetailedPatientInfo } from "../types";
-import { log } from "console";
+import { Patient, DetailedPatientInfo, Diagnosis } from "../types";
 
 export type Action =
   | {
@@ -14,6 +13,10 @@ export type Action =
   | {
     type: "ADD_DETAILED_INFO";
     payload: DetailedPatientInfo;
+  }
+  | {
+    type: "ADD_DIAGNOSES";
+    payload: Diagnosis[];
   };
 
 export const reducer = (state: State, action: Action): State => {
@@ -45,6 +48,17 @@ export const reducer = (state: State, action: Action): State => {
           [action.payload.id]: action.payload
         }
       };
+    case "ADD_DIAGNOSES":
+        return {
+          ...state,
+          diagnoses: {
+            ...action.payload.reduce(
+              (memo, diagnosis) => ({ ...memo, [diagnosis.code]: diagnosis }),
+              {}
+            ),
+            ...state.diagnoses
+          }
+        };
     default:
       return state;
   }
@@ -68,6 +82,13 @@ export const addPatient = (payload: Patient): Action => {
 export const addDetailedInfo = (payload: DetailedPatientInfo): Action => {
   return {
     type: "ADD_DETAILED_INFO",
+    payload: payload
+  };
+};
+
+export const setDiagnoses = (payload: Diagnosis[]): Action => {
+  return {
+    type: "ADD_DIAGNOSES",
     payload: payload
   };
 };
