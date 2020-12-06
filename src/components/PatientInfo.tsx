@@ -82,6 +82,11 @@ const OccupationalHealthcareTable: React.FC<{ entry: OccupationalHealthcareEntry
   );
 };
 
+const assertNever = (value: never): never => {
+  throw new Error(
+    `Unhandled type: ${JSON.stringify(value)}`
+  );
+};
 
 const EntryDetails = (entry: Entry) => {
   switch (entry.type) {
@@ -92,7 +97,7 @@ const EntryDetails = (entry: Entry) => {
     case "OccupationalHealthcare":
       return <OccupationalHealthcareTable entry={entry} />;
     default:
-      return null;
+      return assertNever(entry);
   }
 };
 
