@@ -1,15 +1,18 @@
 import React from "react";
 import axios from "axios";
 import { useParams } from 'react-router-dom';
-import { Icon, Segment } from 'semantic-ui-react';
+import { Icon, Segment, Button } from 'semantic-ui-react';
 import { apiBaseUrl } from "../constants";
 import {
   DetailedPatientInfo, Entry, Gender, GenderIcon,
-  HealthCheckEntry, HospitalEntry, OccupationalHealthcareEntry, HeartColor
+  HealthCheckEntry, HospitalEntry, OccupationalHealthcareEntry, HeartColor, NewEntry
 } from '../types';
+import AddHealthCheckModal from './EntryForms/AddHealthCheckEntry';
+import AddHospitalEntryModal from './EntryForms/AddHospitalEntry';
+import AddOccupationalHealthEntryModal from './EntryForms/AddOccupationalHealthEntry';
 
 import { useStateValue } from "../state";
-import { addDetailedInfo } from '../state/reducer';
+import { addDetailedInfo, addEntry } from '../state/reducer';
 
 const getGenderIcon = (patientGender: Gender): GenderIcon => {
   switch (patientGender) {
@@ -41,16 +44,17 @@ const getHeartColor = (rating: number): HeartColor => {
 
 const HospitalEntryTable: React.FC<{ entry: HospitalEntry }> = ({ entry }) => {
   const [{ diagnoses },] = useStateValue();
-  console.log(entry);
   return (
     <Segment>
       <div style={{ display: "flex" }}><h3 style={{ paddingRight: "5px" }}>{entry.date}</h3> <Icon name='doctor' size="large" /></div>
       Doctor: {entry.specialist} <br />
       <i>{entry.description}</i> <br />
+      <i>{`Discharged: ${entry.discharge.date}, ${entry.discharge.criteria}`}</i> <br />
       <ul>
-        {entry.diagnosisCodes?.map(code => {
+        {entry.diagnosisCodes?.map((code, index) => {
+          if (!diagnoses[code]) return <div>Loading...</div>;
           return (
-            <li>{code} {diagnoses[code].name}</li>
+            <li key={index}>{code} {diagnoses[code].name}</li>
           );
         })}
       </ul>
@@ -105,6 +109,38 @@ const PatientInfo: React.FC = () => {
   const [{ patientInfo }, dispatch] = useStateValue();
   const { id } = useParams<{ id: string }>();
 
+  const [modalOpen, setModalOpen] = React.useState<boolean>(false);
+  const [modalHospitalEntry, setModalHospitalOpen] = React.useState<boolean>(false);
+  const [modalOccHealthEntry, setModalOccHealthOpen] = React.useState<boolean>(false);
+  const [error, setError] = React.useState<string | undefined>();
+
+  const openModal = (modalFunc: Function): void => modalFunc(true);
+
+  const closeModals = (): void => {
+    setModalOpen(false);
+    setModalHospitalOpen(false);
+    setModalOccHealthOpen(false);
+    setError(undefined);
+  };
+
+  const submitNewEntry = async (values: NewEntry) => {
+    try {
+      const newEntryValues = values;
+      if (newEntryValues.diagnosisCodes?.every(x => x === '')) delete newEntryValues.diagnosisCodes;
+      const { data: newEntry } = await axios.post<Entry>(
+        `${apiBaseUrl}/patients/${id}/entries`,
+        newEntryValues
+      );
+      const updatedPatient = patientInfo[id];
+      updatedPatient.entries.push(newEntry);
+      dispatch(addEntry(updatedPatient));
+      closeModals();
+    } catch (e) {
+      console.error(e.response.data);
+      setError(e.response.data.error);
+    }
+  };
+
   const fetchPatientInfo = async () => {
     try {
       const { data: detailedPatientInfo } = await axios.get<DetailedPatientInfo>(
@@ -122,7 +158,6 @@ const PatientInfo: React.FC = () => {
       <div>Loading...</div>
     );
   }
-
   return (
     <div>
       <div style={{ display: 'flex' }}>
@@ -137,6 +172,27 @@ const PatientInfo: React.FC = () => {
       <p>{patientInfo[id].ssn ? `SSN: ${patientInfo[id].ssn}` : ''}</p>
       <h4>Entries:</h4>
       {patientInfo[id].entries.map(entry => EntryDetails(entry))}
+      <AddHealthCheckModal
+        modalOpen={modalOpen}
+        onSubmit={submitNewEntry}
+        error={error}
+        onClose={closeModals}
+      />
+      <Button onClick={() => openModal(setModalOpen)}>Add New Health Check Entry</Button>
+      <AddHospitalEntryModal
+        modalOpen={modalHospitalEntry}
+        onSubmit={submitNewEntry}
+        error={error}
+        onClose={closeModals}
+      />
+      <Button onClick={() => openModal(setModalOccHealthOpen)}>Add New Hospital Entry</Button> <br />
+      <AddOccupationalHealthEntryModal
+        modalOpen={modalOccHealthEntry}
+        onSubmit={submitNewEntry}
+        error={error}
+        onClose={closeModals}
+      />
+      <Button onClick={() => openModal(setModalOccHealthOpen)}>Add New Occupational Health Check Entry</Button>
     </div>
   );
 };

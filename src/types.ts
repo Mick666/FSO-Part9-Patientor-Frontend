@@ -14,6 +14,14 @@ export type GenderIcon = 'mars' | 'venus' | 'genderless' | undefined;
 
 export type HeartColor = 'green' | 'yellow' | 'orange' | 'red' | undefined;
 
+export type NewEntry = 
+    | Omit<HospitalEntry, 'id'> 
+    | Omit<OccupationalHealthcareEntry, 'id'>  
+    | Omit<HealthCheckEntry, 'id'> ;
+
+export type NewHospitalEntry = Omit<HospitalEntry, 'id'> ;
+export type NewOcccupationalHealthcareEntry = Omit<OccupationalHealthcareEntry, 'id'> ;
+
 export interface Patient {
   id: string;
   name: string;
